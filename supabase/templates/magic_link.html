@@ -1,0 +1,12 @@
+<div style="font-family: Arial, sans-serif; color: #1f1f1f; max-width: 480px">
+  <h2 style="margin: 0 0 16px">Connexion au dashboard APV</h2>
+  <p>Cliquez sur le bouton ci-dessous pour vous connecter :</p>
+  <p>
+    <a href="{{ .SiteURL }}/auth/confirmer?token_hash={{ .TokenHash }}"
+       style="display: inline-block; background: #c0504c; color: #ffffff; padding: 12px 20px; border-radius: 10px; text-decoration: none; font-weight: 600">
+      Se connecter
+    </a>
+  </p>
+  <p>Ou saisissez ce code sur la page de connexion : <strong style="font-size: 20px; letter-spacing: 4px">{{ .Token }}</strong></p>
+  <p style="color: #6b6b6b; font-size: 13px">Ce lien et ce code sont valables 1 heure. Si vous n'avez pas demandé cette connexion, ignorez cet email.</p>
+</div>
