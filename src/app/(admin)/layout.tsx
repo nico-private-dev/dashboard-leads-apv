@@ -12,9 +12,15 @@ export default async function AdminLayout({ children }: LayoutProps<"/">) {
   const email = data.user?.email;
   if (!email || !isAdminEmail(email)) redirect("/connexion");
 
+  // Même règle que la page À traiter.
+  const { count } = await supabase
+    .from("leads")
+    .select("id", { count: "exact", head: true })
+    .or("statut.in.(nouveau,a_completer,hors_zone),and(statut.eq.doublon,doublon_verifie.is.false)");
+
   return (
     <SidebarProvider>
-      <AppSidebar email={email} />
+      <AppSidebar email={email} aTraiter={count ?? 0} />
       <SidebarInset className="min-w-0">
         <Entete />
         <main className="flex-1 p-4 md:p-6">{children}</main>

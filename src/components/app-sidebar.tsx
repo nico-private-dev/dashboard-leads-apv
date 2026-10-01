@@ -11,13 +11,14 @@ import {
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { NAVIGATION } from "./navigation";
 
-export function AppSidebar({ email }: { email: string }) {
+export function AppSidebar({ email, aTraiter }: { email: string; aTraiter: number }) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
 
@@ -42,6 +43,11 @@ export function AppSidebar({ email }: { email: string }) {
                   <Icone />
                   <span>{titre}</span>
                 </SidebarMenuButton>
+                {href === "/a-traiter" && aTraiter > 0 && (
+                  <SidebarMenuBadge className="bg-jaune text-jaune-foreground peer-data-active/menu-button:text-jaune-foreground">
+                    {aTraiter}
+                  </SidebarMenuBadge>
+                )}
               </SidebarMenuItem>
             ))}
           </SidebarMenu>

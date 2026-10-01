@@ -6,7 +6,7 @@ import type { Referentiel } from "@/lib/referentiel";
 import { BadgeStatut, Pastille } from "./badge-statut";
 
 export const COLONNES_LISTE =
-  "id, recu_le, statut, statut_facturation, prenom, nom, ville, code_postal, departement, thematique_id, site_id, source_id, partenaire_id, doublon_de";
+  "id, recu_le, statut, statut_facturation, prenom, nom, ville, code_postal, departement, thematique_id, site_id, source_id, partenaire_id, doublon_de, doublon_verifie";
 
 export type LigneLead = {
   id: string;
@@ -23,6 +23,7 @@ export type LigneLead = {
   source_id: string | null;
   partenaire_id: string | null;
   doublon_de: string | null;
+  doublon_verifie: boolean;
 };
 
 type Tri = { colonne: string; ordre: "asc" | "desc"; lien: (colonne: string) => string };
