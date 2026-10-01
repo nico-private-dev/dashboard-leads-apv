@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { nomComplet } from "@/lib/libelles";
 import { verifierLien } from "@/lib/liens";
 import { createAdminClient } from "@/lib/supabase/server";
+import { enregistrerClic } from "./actions";
 import { ACTIONS_PARTENAIRE, type ActionPartenaire } from "./constantes";
 import { FormulaireClic } from "./formulaire-clic";
 
@@ -55,7 +56,7 @@ export default async function PageLienPartenaire({ params, searchParams }: PageP
         </p>
         {lead.besoin && <p className="mt-2 rounded-lg bg-muted/50 p-3 text-sm">{lead.besoin}</p>}
       </div>
-      <FormulaireClic jeton={jeton} actionInitiale={initiale} />
+      <FormulaireClic envoyer={enregistrerClic.bind(null, jeton)} actionInitiale={initiale} />
     </Cadre>
   );
 }

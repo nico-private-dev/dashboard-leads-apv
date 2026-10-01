@@ -10,13 +10,19 @@ export type EtatConnexion = { etape: "email" | "code"; email?: string; message?:
 const emailSchema = z.email();
 const codeSchema = z.string().regex(/^\d{6}$/);
 
+// Partenaire avec un accès à l'espace (créé par un admin depuis l'écran Partenaires).
+async function estPartenaire(email: string) {
+  const { data } = await createAdminClient().from("profils").select("id").eq("role", "partenaire").ilike("email", email).limit(1);
+  return Boolean(data?.length);
+}
+
 export async function demanderConnexion(_: EtatConnexion, formData: FormData): Promise<EtatConnexion> {
   const parsed = emailSchema.safeParse(String(formData.get("email") ?? "").trim().toLowerCase());
   if (!parsed.success) return { etape: "email", erreur: "Adresse email invalide." };
   const email = parsed.data;
 
-  // Même réponse que l'email soit autorisé ou non : on ne révèle pas la liste des admins.
-  if (isAdminEmail(email)) {
+  // Même réponse que l'email soit autorisé ou non : on ne révèle pas qui a un compte.
+  if (isAdminEmail(email) || (await estPartenaire(email))) {
     if (process.env.NODE_ENV === "development") {
       // ponytail: pas d'envoi d'email en local (DNS non vérifié dans Resend) → lien affiché dans le terminal.
       const { data, error } = await createAdminClient().auth.admin.generateLink({ type: "magiclink", email });

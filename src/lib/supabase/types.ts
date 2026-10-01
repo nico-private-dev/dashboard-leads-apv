@@ -136,6 +136,47 @@ export type Database = {
           },
         ]
       }
+      factures: {
+        Row: {
+          facture_le: string
+          id: string
+          mois: string
+          montant: number
+          nb_leads: number
+          partenaire_id: string
+          paye_le: string | null
+          statut: string
+        }
+        Insert: {
+          facture_le?: string
+          id?: string
+          mois: string
+          montant: number
+          nb_leads?: number
+          partenaire_id: string
+          paye_le?: string | null
+          statut: string
+        }
+        Update: {
+          facture_le?: string
+          id?: string
+          mois?: string
+          montant?: number
+          nb_leads?: number
+          partenaire_id?: string
+          paye_le?: string | null
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factures_partenaire_id_fkey"
+            columns: ["partenaire_id"]
+            isOneToOne: false
+            referencedRelation: "partenaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_events: {
         Row: {
           auteur: string
@@ -189,6 +230,7 @@ export type Database = {
           doublon_verifie: boolean
           email: string | null
           envoye_le: string | null
+          facturable_le: string | null
           geoloc_incertaine: boolean
           id: string
           lat: number | null
@@ -229,6 +271,7 @@ export type Database = {
           doublon_verifie?: boolean
           email?: string | null
           envoye_le?: string | null
+          facturable_le?: string | null
           geoloc_incertaine?: boolean
           id?: string
           lat?: number | null
@@ -269,6 +312,7 @@ export type Database = {
           doublon_verifie?: boolean
           email?: string | null
           envoye_le?: string | null
+          facturable_le?: string | null
           geoloc_incertaine?: boolean
           id?: string
           lat?: number | null
@@ -620,7 +664,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      espace_leads: {
+        Args: never
+        Returns: {
+          besoin: string
+          champs_specifiques: Json
+          code_postal: string
+          departement: string
+          email: string
+          envoye_le: string
+          id: string
+          montant_devis: number
+          motif_contestation: string
+          nom: string
+          prenom: string
+          recu_le: string
+          statut: string
+          telephone: string
+          thematique: string
+          ville: string
+          vu_le: string
+        }[]
+      }
+      espace_partenaire: {
+        Args: never
+        Returns: {
+          raison_sociale: string
+        }[]
+      }
       est_admin: { Args: never; Returns: boolean }
+      partenaire_courant: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never

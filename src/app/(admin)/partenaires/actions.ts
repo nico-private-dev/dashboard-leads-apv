@@ -5,7 +5,8 @@ import { z } from "zod";
 import type { ResultatAction } from "@/components/formulaire-dialog";
 import { REGIONS, type ZoneConfig } from "@/lib/attribution";
 import { geolocaliser } from "@/lib/ingestion/traitement";
-import { createClient } from "@/lib/supabase/server";
+import { isAdminEmail } from "@/lib/admin";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
 
 const texte = z.string().trim();
@@ -96,6 +97,50 @@ export async function enregistrerRegle(fd: FormData): Promise<ResultatAction> {
   const ligne = { ...valeurs, zone_config: zone_config as Json };
   const { error } = id ? await supabase.from("attributions").update(ligne).eq("id", id) : await supabase.from("attributions").insert(ligne);
   if (error) return { erreur: "Erreur : " + error.message };
+  revalidatePath("/partenaires");
+  return {};
+}
+
+// --- Accès à l'espace partenaire (brief §9.8) ---
+
+async function verifierAdmin() {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("est_admin");
+  return data === true;
+}
+
+// Crée le compte de connexion (lien magique, sans mot de passe) sur l'email de réception du partenaire.
+export async function creerAccesEspace(partenaireId: string): Promise<ResultatAction> {
+  if (!(await verifierAdmin())) return { erreur: "Action réservée aux admins." };
+  const db = createAdminClient();
+  const { data: p } = await db.from("partenaires").select("raison_sociale, contact_email").eq("id", partenaireId).single();
+  const email = p?.contact_email?.toLowerCase();
+  if (!p || !email) return { erreur: "Renseignez d'abord l'email de réception du partenaire." };
+  if (isAdminEmail(email)) return { erreur: "Cet email est celui d'un admin." };
+
+  let { data: cree, error } = await db.auth.admin.createUser({ email, email_confirm: true });
+  if (error) {
+    // Compte déjà existant (accès retiré puis recréé) : on le retrouve.
+    const { data: liste } = await db.auth.admin.listUsers({ perPage: 1000 });
+    const existant = liste?.users.find((u) => u.email?.toLowerCase() === email);
+    if (!existant) return { erreur: "Création du compte impossible : " + error.message };
+    cree = { user: existant };
+    error = null;
+  }
+  const { error: e2 } = await db
+    .from("profils")
+    .upsert({ id: cree.user!.id, email, nom: p.raison_sociale, role: "partenaire", partenaire_id: partenaireId });
+  if (e2) return { erreur: "Erreur : " + e2.message };
+  revalidatePath("/partenaires");
+  return {};
+}
+
+export async function retirerAccesEspace(partenaireId: string): Promise<ResultatAction> {
+  if (!(await verifierAdmin())) return { erreur: "Action réservée aux admins." };
+  const db = createAdminClient();
+  const { data: profils } = await db.from("profils").select("id").eq("role", "partenaire").eq("partenaire_id", partenaireId);
+  // Supprime le compte de connexion (les leads ne sont pas touchés ; le profil suit par cascade).
+  for (const pr of profils ?? []) await db.auth.admin.deleteUser(pr.id);
   revalidatePath("/partenaires");
   return {};
 }

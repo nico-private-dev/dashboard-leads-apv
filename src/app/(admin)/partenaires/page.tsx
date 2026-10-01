@@ -9,6 +9,7 @@ import { chargerReferentiel } from "@/lib/referentiel";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
 import { FormulairePartenaire } from "./formulaire";
+import { AccesEspace } from "./acces-espace";
 import { FormulaireZone } from "./formulaire-zone";
 
 export const metadata: Metadata = { title: "Partenaires" };
@@ -23,12 +24,14 @@ function tarif(p: Tables<"partenaires">) {
 export default async function PagePartenaires() {
   const supabase = await createClient();
   const debut30j = bornesPeriode("30j").debut!.toISOString();
-  const [{ data: partenaires }, { data: leads30j }, { data: regles }, referentiel] = await Promise.all([
+  const [{ data: partenaires }, { data: leads30j }, { data: regles }, referentiel, { data: comptes }] = await Promise.all([
     supabase.from("partenaires").select().order("raison_sociale"),
     supabase.from("leads").select("partenaire_id").not("partenaire_id", "is", null).gte("recu_le", debut30j),
     supabase.from("attributions").select().order("created_at"),
     chargerReferentiel(supabase),
+    supabase.from("profils").select("partenaire_id, email").eq("role", "partenaire"),
   ]);
+  const compte = new Map((comptes ?? []).map((c) => [c.partenaire_id, c.email]));
   const thematique = new Map(referentiel.thematiques.map((t) => [t.id, t]));
   const site = new Map(referentiel.sites.map((s) => [s.id, s.nom]));
   if (!partenaires) throw new Error("Chargement des partenaires impossible.");
@@ -114,6 +117,7 @@ export default async function PagePartenaires() {
                   );
                 })}
               <p className="text-xs text-muted-foreground">{nb30j.get(p.id) ?? 0} lead(s) reçu(s) sur 30 jours</p>
+              <AccesEspace partenaireId={p.id} email={compte.get(p.id) ?? p.contact_email} actif={compte.has(p.id)} />
             </div>
           </li>
         ))}

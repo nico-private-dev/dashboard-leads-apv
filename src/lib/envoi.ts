@@ -74,7 +74,7 @@ export async function envoyerAuPartenaire(leadId: string, type: TypeEnvoi, db: D
 
   const jeton = signerLien(lead.id, p.id, secret);
   const url = (action: string) => `${process.env.NEXT_PUBLIC_APP_URL}/p/${jeton}?action=${action}`;
-  const boutons =
+  const boutons: { libelle: string; url: string; principal?: boolean }[] =
     type === "suivi"
       ? [
           { libelle: "Devis envoyé", url: url("devis_envoye"), principal: true },
@@ -86,6 +86,9 @@ export async function envoyerAuPartenaire(leadId: string, type: TypeEnvoi, db: D
           { libelle: "J'ai contacté le client", url: url("contacte"), principal: true },
           { libelle: "Lead invalide", url: url("invalide") },
         ];
+  // « Ouvrir mon espace » seulement pour les partenaires qui ont un accès (brief §7).
+  const { data: acces } = await db.from("profils").select("id").eq("role", "partenaire").eq("partenaire_id", p.id).limit(1);
+  if (acces?.length) boutons.push({ libelle: "Ouvrir mon espace", url: `${process.env.NEXT_PUBLIC_APP_URL}/espace` });
   const lieu = [lead.ville, lead.code_postal, lead.departement && `(${lead.departement})`].filter(Boolean).join(" ") || "Non précisée";
   const thematique = lead.thematiques?.nom ?? "Lead";
 

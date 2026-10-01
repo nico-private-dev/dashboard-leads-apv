@@ -4,11 +4,12 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { enregistrerClic, type ResultatClic } from "./actions";
+import type { ResultatClic } from "@/lib/action-partenaire";
 import { ACTIONS_PARTENAIRE, LIBELLES_ACTION, MOTIFS_INVALIDE, type ActionPartenaire } from "./constantes";
 
 // Le clic dans l'email ouvre cette page ; seul le bouton « Confirmer » enregistre (les scanners d'emails ne cliquent pas).
-export function FormulaireClic({ jeton, actionInitiale }: { jeton: string; actionInitiale: ActionPartenaire }) {
+// `envoyer` : action serveur déjà liée au lien signé (page /p) ou au lead de l'espace partenaire.
+export function FormulaireClic({ envoyer, actionInitiale }: { envoyer: (fd: FormData) => Promise<ResultatClic>; actionInitiale: ActionPartenaire }) {
   const [action, setAction] = useState<ActionPartenaire>(actionInitiale);
   const [resultat, setResultat] = useState<ResultatClic>({});
   const [enCours, demarrer] = useTransition();
@@ -20,7 +21,7 @@ export function FormulaireClic({ jeton, actionInitiale }: { jeton: string; actio
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
-        demarrer(async () => setResultat(await enregistrerClic(jeton, fd)));
+        demarrer(async () => setResultat(await envoyer(fd)));
       }}
       className="space-y-4"
     >
