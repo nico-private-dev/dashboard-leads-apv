@@ -2,8 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAdminEmail } from "@/lib/admin";
 
-// /api/ingest : webhooks, protégés par leur token (et la signature Tally), pas par la session.
-const PUBLIC_PATHS = ["/connexion", "/auth/", "/api/ingest/"];
+// Accès sans session : webhooks (token + signature Tally), tâches planifiées (CRON_SECRET), liens partenaires 1 clic (lien signé).
+const PUBLIC_PATHS = ["/connexion", "/auth/", "/api/ingest/", "/api/taches/", "/p/"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

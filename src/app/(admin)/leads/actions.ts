@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { ResultatAction } from "@/components/formulaire-dialog";
+import { attribuerLead, envoyerAuPartenaire } from "@/lib/envoi";
 import { normaliser } from "@/lib/ingestion/extraction";
 import { geolocaliser, traiterLead } from "@/lib/ingestion/traitement";
 import { STATUTS } from "@/lib/libelles";
@@ -159,4 +160,36 @@ export async function creerLead(fd: FormData): Promise<ResultatAction> {
   await traiterLead(lead.id);
   rafraichir();
   return {};
+}
+
+// --- Attribution et envoi (brief §6, §9.2, §9.3) ---
+
+// Les fonctions d'envoi utilisent la clé serveur (hors RLS) : on vérifie le rôle explicitement.
+async function estAdmin() {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("est_admin");
+  return data === true;
+}
+
+export async function attribuerManuellement(id: string, partenaireId: string): Promise<ResultatAction> {
+  if (!uuid.safeParse(id).success || !uuid.safeParse(partenaireId).success) return { erreur: "Partenaire invalide." };
+  const res = await maj(id, { partenaire_id: partenaireId, attribue_le: new Date().toISOString(), statut: "attribue", envoye_le: null, vu_le: null });
+  if (!res.erreur) await journal(id, "attribue", { manuel: true });
+  return res;
+}
+
+export async function relancerAttribution(id: string): Promise<ResultatAction> {
+  if (!uuid.safeParse(id).success) return { erreur: "Lead inconnu." };
+  if (!(await estAdmin())) return { erreur: "Action réservée aux admins." };
+  const statut = await attribuerLead(id);
+  rafraichir();
+  return statut === "hors_zone" ? { erreur: "Aucun partenaire ne couvre cette zone : lead hors zone." } : {};
+}
+
+export async function envoyerLead(id: string): Promise<ResultatAction> {
+  if (!uuid.safeParse(id).success) return { erreur: "Lead inconnu." };
+  if (!(await estAdmin())) return { erreur: "Action réservée aux admins." };
+  const res = await envoyerAuPartenaire(id, "nouveau", undefined, "admin");
+  rafraichir();
+  return res;
 }

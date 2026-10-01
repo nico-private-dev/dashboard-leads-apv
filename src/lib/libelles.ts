@@ -32,8 +32,12 @@ export const STATUTS_FACTURATION: Record<string, string> = {
   conteste: "Contesté",
 };
 
-// Leads à traiter par un admin (brief §9.2).
-export const STATUTS_A_TRAITER = ["nouveau", "a_completer", "hors_zone", "doublon"];
+// Leads à traiter par un admin (brief §9.2). Les hors zone n'y restent que 7 jours :
+// ensuite on les retrouve dans « Non vendus ». Utilisé par la page et par le compteur du menu.
+export function filtreATraiter(maintenant = new Date()) {
+  const ilYa7j = new Date(maintenant.getTime() - 7 * 86_400_000).toISOString();
+  return `statut.in.(nouveau,attribue,a_completer),and(statut.eq.doublon,doublon_verifie.is.false),and(statut.eq.hors_zone,recu_le.gte.${ilYa7j})`;
+}
 
 export const EVENEMENTS: Record<string, string> = {
   recu: "Reçu",
@@ -47,6 +51,13 @@ export const EVENEMENTS: Record<string, string> = {
   note: "Note interne modifiée",
   doublon_confirme: "Doublon confirmé",
   doublon_annule: "Doublon annulé",
+  attribue: "Attribué",
+  attribution_impossible: "Attribution impossible",
+  email_envoye: "Email envoyé au partenaire",
+  email_echec: "Échec d'envoi de l'email",
+  relance_envoyee: "Relance envoyée au partenaire",
+  suivi_envoye: "Email de suivi envoyé",
+  clic_partenaire: "Action du partenaire",
 };
 
 export function nomComplet(l: { prenom: string | null; nom: string | null }) {

@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Entete } from "@/components/entete";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { isAdminEmail } from "@/lib/admin";
+import { filtreATraiter } from "@/lib/libelles";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminLayout({ children }: LayoutProps<"/">) {
@@ -16,7 +17,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/">) {
   const { count } = await supabase
     .from("leads")
     .select("id", { count: "exact", head: true })
-    .or("statut.in.(nouveau,a_completer,hors_zone),and(statut.eq.doublon,doublon_verifie.is.false)");
+    .or(filtreATraiter());
 
   return (
     <SidebarProvider>

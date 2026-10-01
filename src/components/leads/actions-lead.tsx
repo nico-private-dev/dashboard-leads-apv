@@ -2,7 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { Pencil } from "lucide-react";
-import { annulerDoublon, changerStatut, confirmerDoublon, enregistrerNote, modifierCoordonnees } from "@/app/(admin)/leads/actions";
+import {
+  annulerDoublon,
+  attribuerManuellement,
+  changerStatut,
+  confirmerDoublon,
+  enregistrerNote,
+  envoyerLead,
+  modifierCoordonnees,
+  relancerAttribution,
+} from "@/app/(admin)/leads/actions";
 import { Champ } from "@/components/champ";
 import { FormulaireDialog, type ResultatAction } from "@/components/formulaire-dialog";
 import { Button } from "@/components/ui/button";
@@ -153,6 +162,67 @@ export function ChampsCoordonnees({ valeurs }: { valeurs?: Partial<Coordonnees> 
         <Label htmlFor="besoin">Besoin</Label>
         <Textarea id="besoin" name="besoin" defaultValue={valeurs?.besoin ?? ""} rows={3} />
       </div>
+    </>
+  );
+}
+
+export function AttributionLead({
+  id,
+  partenaireId,
+  partenaires,
+  envoye,
+}: {
+  id: string;
+  partenaireId: string | null;
+  partenaires: { id: string; raison_sociale: string }[];
+  envoye: boolean;
+}) {
+  const [choix, setChoix] = useState(partenaireId ?? "");
+  const { enCours, erreur, lancer } = useAction();
+  const nom = partenaires.find((p) => p.id === partenaireId)?.raison_sociale;
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <select
+          value={choix}
+          onChange={(e) => setChoix(e.target.value)}
+          className="h-8 min-w-0 flex-1 rounded-lg border border-input bg-card px-2 text-sm"
+          aria-label="Partenaire"
+        >
+          <option value="">— Choisir un partenaire —</option>
+          {partenaires.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.raison_sociale}
+            </option>
+          ))}
+        </select>
+        <Button size="sm" variant="outline" disabled={enCours || !choix || choix === partenaireId} onClick={() => lancer(() => attribuerManuellement(id, choix))}>
+          {partenaireId ? "Réattribuer" : "Attribuer"}
+        </Button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {partenaireId && (
+          <Button size="sm" disabled={enCours} onClick={() => lancer(() => envoyerLead(id))}>
+            {envoye ? "Renvoyer" : "Envoyer"} à {nom}
+          </Button>
+        )}
+        <Button size="sm" variant="ghost" disabled={enCours} onClick={() => lancer(() => relancerAttribution(id))}>
+          Attribution automatique
+        </Button>
+      </div>
+      {erreur && <p className="text-sm text-destructive">{erreur}</p>}
+    </div>
+  );
+}
+
+export function EnvoyerLead({ id, nom }: { id: string; nom: string }) {
+  const { enCours, erreur, lancer } = useAction();
+  return (
+    <>
+      <Button size="sm" disabled={enCours} onClick={() => lancer(() => envoyerLead(id))}>
+        Envoyer à {nom}
+      </Button>
+      {erreur && <span className="block max-w-56 text-xs whitespace-normal text-destructive">{erreur}</span>}
     </>
   );
 }

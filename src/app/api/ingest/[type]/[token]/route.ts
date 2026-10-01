@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { after, NextResponse } from "next/server";
+import { notifierAdmins } from "@/lib/envoi";
 import { traiterLead } from "@/lib/ingestion/traitement";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
@@ -36,6 +37,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/ingest/[type]/[
       site_id: source.site_id,
       message: `Envoi refusé sur « ${source.nom} » : signature Tally invalide (vérifier le secret).`,
     });
+    after(() => notifierAdmins("Webhook refusé", [`Signature Tally invalide sur la source « ${source.nom} ».`, "Vérifiez le secret de signature dans Tally et dans Sites & sources."], "/sites"));
     return NextResponse.json({ erreur: "Signature invalide" }, { status: 401 });
   }
 

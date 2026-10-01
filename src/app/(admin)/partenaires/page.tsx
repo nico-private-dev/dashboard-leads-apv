@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import { Pencil, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { decrireZone, type ZoneConfig } from "@/lib/attribution";
 import { formatEuros, formatNombre } from "@/lib/format";
 import { bornesPeriode } from "@/lib/periodes";
+import { chargerReferentiel } from "@/lib/referentiel";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
 import { FormulairePartenaire } from "./formulaire";
+import { FormulaireZone } from "./formulaire-zone";
 
 export const metadata: Metadata = { title: "Partenaires" };
 
@@ -20,10 +23,14 @@ function tarif(p: Tables<"partenaires">) {
 export default async function PagePartenaires() {
   const supabase = await createClient();
   const debut30j = bornesPeriode("30j").debut!.toISOString();
-  const [{ data: partenaires }, { data: leads30j }] = await Promise.all([
+  const [{ data: partenaires }, { data: leads30j }, { data: regles }, referentiel] = await Promise.all([
     supabase.from("partenaires").select().order("raison_sociale"),
     supabase.from("leads").select("partenaire_id").not("partenaire_id", "is", null).gte("recu_le", debut30j),
+    supabase.from("attributions").select().order("created_at"),
+    chargerReferentiel(supabase),
   ]);
+  const thematique = new Map(referentiel.thematiques.map((t) => [t.id, t]));
+  const site = new Map(referentiel.sites.map((s) => [s.id, s.nom]));
   if (!partenaires) throw new Error("Chargement des partenaires impossible.");
   const nb30j = new Map<string, number>();
   for (const l of leads30j ?? []) nb30j.set(l.partenaire_id!, (nb30j.get(l.partenaire_id!) ?? 0) + 1);
@@ -64,9 +71,50 @@ export default async function PagePartenaires() {
                 }
               />
             </div>
-            <p className="mt-3 border-t pt-2 text-xs text-muted-foreground">
-              {nb30j.get(p.id) ?? 0} lead(s) reçu(s) sur 30 jours · zones d&apos;attribution en phase 2
-            </p>
+            <div className="mt-3 space-y-1.5 border-t pt-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground uppercase">Zones</span>
+                <FormulaireZone
+                  partenaireId={p.id}
+                  referentiel={referentiel}
+                  declencheur={
+                    <Button variant="ghost" size="sm">
+                      <Plus /> Zone
+                    </Button>
+                  }
+                />
+              </div>
+              {(regles ?? [])
+                .filter((r) => r.partenaire_id === p.id)
+                .map((r) => {
+                  const t = thematique.get(r.thematique_id);
+                  return (
+                    <FormulaireZone
+                      key={r.id}
+                      partenaireId={p.id}
+                      regle={r}
+                      referentiel={referentiel}
+                      declencheur={
+                        <button
+                          type="button"
+                          className={`flex w-full items-start gap-2 rounded-lg px-2 py-1 text-left text-sm hover:bg-muted ${r.actif ? "" : "opacity-50"}`}
+                        >
+                          <span className="mt-1.5 size-2 shrink-0 rounded-full" style={{ backgroundColor: t?.couleur }} />
+                          <span className="min-w-0 flex-1">
+                            <span className="font-medium">{t?.nom}</span>
+                            {r.site_id && <span className="text-muted-foreground"> · {site.get(r.site_id)}</span>}
+                            <span className="block text-muted-foreground">{decrireZone(r.type_zone, r.zone_config as ZoneConfig)}</span>
+                          </span>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {r.actif ? (r.envoi_auto ? "Envoi auto" : "Envoi manuel") : "Inactive"}
+                          </span>
+                        </button>
+                      }
+                    />
+                  );
+                })}
+              <p className="text-xs text-muted-foreground">{nb30j.get(p.id) ?? 0} lead(s) reçu(s) sur 30 jours</p>
+            </div>
           </li>
         ))}
       </ul>

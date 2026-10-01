@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { Json, Tables } from "@/lib/supabase/types";
+import { attribuerLead, notifierAdmins } from "@/lib/envoi";
 import { extraireGenerique, extraireTally, normaliser, type Mapping, type Socle } from "./extraction";
 
 type Admin = ReturnType<typeof createAdminClient>;
@@ -121,6 +122,9 @@ export async function traiterLead(leadId: string) {
       ...(doublonDe && { doublon_de: doublonDe }),
       ...(!contactable && { motif: "Ni téléphone ni email détecté" }),
     });
+
+    // Brief §4 étape 6 : attribution au partenaire de la zone.
+    if (statut === "nouveau") await attribuerLead(leadId, db);
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     await evenement(db, leadId, "erreur_traitement", { erreur: message });
@@ -131,5 +135,7 @@ export async function traiterLead(leadId: string) {
       site_id: lead.site_id,
       message: `Traitement du lead en échec : ${message}`,
     });
+    // Erreur d'ingestion : email immédiat aux admins (les autres alertes passent par le récap quotidien).
+    await notifierAdmins("Erreur de traitement d'un lead", [message, "Le lead est conservé en « À compléter »."], `/a-traiter?lead=${leadId}`);
   }
 }

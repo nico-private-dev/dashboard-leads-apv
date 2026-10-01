@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Mail, MapPin, Phone, TriangleAlert } from "lucide-react";
-import { formatDateHeure } from "@/lib/format";
+import { LIBELLES_ACTION, type ActionPartenaire } from "@/app/p/[jeton]/constantes";
+import { formatDateHeure, formatEuros } from "@/lib/format";
 import { EVENEMENTS, nomComplet, STATUTS, STATUTS_FACTURATION, TYPES_SOURCE } from "@/lib/libelles";
 import { createClient } from "@/lib/supabase/server";
-import { ActionsDoublon, ChangerStatut, ModifierCoordonnees, NoteInterne } from "./actions-lead";
+import { ActionsDoublon, AttributionLead, ChangerStatut, ModifierCoordonnees, NoteInterne } from "./actions-lead";
 import { BadgeStatut, Pastille } from "./badge-statut";
 import { PanneauLead } from "./panneau-lead";
 
@@ -25,6 +26,11 @@ function detailEvenement(type: string, details: Record<string, unknown>) {
     const a = STATUTS[String(details.a)]?.label ?? details.a;
     return `${de} → ${a}`;
   }
+  if (typeof details.action === "string") {
+    const libelle = LIBELLES_ACTION[details.action as ActionPartenaire] ?? details.action;
+    return [libelle, details.motif, details.precision, details.montant && `${details.montant} €`].filter(Boolean).join(" · ");
+  }
+  if (typeof details.partenaire === "string") return details.partenaire + (details.simule ? " (email simulé en local)" : "");
   if (typeof details.erreur === "string") return details.erreur;
   if (typeof details.motif === "string") return details.motif;
   if (typeof details.source === "string") return details.source;
@@ -34,13 +40,14 @@ function detailEvenement(type: string, details: Record<string, unknown>) {
 // Fiche lead (brief §9.3) affichée en panneau latéral.
 export async function FicheLead({ id, urlFermeture, lienFiche }: { id: string; urlFermeture: string; lienFiche: (id: string) => string }) {
   const supabase = await createClient();
-  const [{ data: lead }, { data: evenements }] = await Promise.all([
+  const [{ data: lead }, { data: evenements }, { data: partenaires }] = await Promise.all([
     supabase
       .from("leads")
       .select("*, thematiques(nom, couleur), sites(nom, domaine), sources(nom, type), partenaires(raison_sociale)")
       .eq("id", id)
       .maybeSingle(),
     supabase.from("lead_events").select("id, type, auteur, details, created_at").eq("lead_id", id).order("created_at", { ascending: false }),
+    supabase.from("partenaires").select("id, raison_sociale").eq("actif", true).order("raison_sociale"),
   ]);
 
   if (!lead) {
@@ -141,12 +148,30 @@ export async function FicheLead({ id, urlFermeture, lienFiche }: { id: string; u
           </Bloc>
         )}
 
+        <Bloc titre="Partenaire">
+          <p className="text-sm">
+            {lead.partenaires?.raison_sociale ?? <span className="text-muted-foreground">Non attribué</span>}
+            {lead.attribue_le && <span className="text-muted-foreground"> · attribué le {formatDateHeure(lead.attribue_le)}</span>}
+          </p>
+          {(lead.envoye_le || lead.vu_le) && (
+            <p className="text-sm text-muted-foreground">
+              {lead.envoye_le && `Envoyé le ${formatDateHeure(lead.envoye_le)}`}
+              {lead.vu_le ? ` · vu le ${formatDateHeure(lead.vu_le)}` : lead.envoye_le ? " · pas encore vu" : ""}
+            </p>
+          )}
+          {lead.motif_contestation && <p className="text-sm text-primary">Signalé invalide : {lead.motif_contestation}</p>}
+          {lead.montant_devis !== null && (
+            <p className="text-sm">
+              Montant : {formatEuros(Number(lead.montant_devis))}
+              {lead.montant_commission !== null && ` · commission ${formatEuros(Number(lead.montant_commission), true)}`}
+            </p>
+          )}
+          <AttributionLead id={lead.id} partenaireId={lead.partenaire_id} partenaires={partenaires ?? []} envoye={Boolean(lead.envoye_le)} />
+        </Bloc>
+
         <Bloc titre="Suivi">
           <ChangerStatut id={lead.id} statut={lead.statut} />
-          <p className="text-sm text-muted-foreground">
-            Partenaire : {lead.partenaires?.raison_sociale ?? "non attribué (attribution en phase 2)"} · Facturation :{" "}
-            {STATUTS_FACTURATION[lead.statut_facturation]}
-          </p>
+          <p className="text-sm text-muted-foreground">Facturation : {STATUTS_FACTURATION[lead.statut_facturation]}</p>
           <NoteInterne id={lead.id} note={lead.notes_internes} />
         </Bloc>
 
