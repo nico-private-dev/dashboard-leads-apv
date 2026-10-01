@@ -93,6 +93,35 @@ async function sitesSilencieux(db: Db) {
   return n;
 }
 
+// Achat au lead : facturable à la fin du délai de contestation s'il n'a pas été déclaré invalide (brief §8).
+async function facturablesAchatLead(db: Db) {
+  const { data: partenaires } = await db.from("partenaires").select("id, prix_lead, delai_contestation_jours").eq("modele", "achat_lead");
+  let n = 0;
+  for (const p of partenaires ?? []) {
+    const delai = p.delai_contestation_jours * JOUR;
+    const { data: leads } = await db
+      .from("leads")
+      .select("id, envoye_le")
+      .eq("partenaire_id", p.id)
+      .eq("statut_facturation", "non_facturable")
+      .not("statut", "in", "(invalide,doublon,archive,hors_zone,non_lead)")
+      .lt("envoye_le", new Date(Date.now() - delai).toISOString());
+    for (const l of leads ?? []) {
+      await db
+        .from("leads")
+        .update({
+          statut_facturation: "a_facturer",
+          prix_facture: p.prix_lead,
+          // Date fixe (fin du délai) : le mois de facturation ne dépend pas de l'heure de passage de la tâche.
+          facturable_le: new Date(new Date(l.envoye_le!).getTime() + delai).toISOString(),
+        })
+        .eq("id", l.id);
+      n++;
+    }
+  }
+  return n;
+}
+
 // Récap quotidien aux admins (leads à compléter, hors zone, alertes) : brief §7.
 async function recapQuotidien(db: Db) {
   const [{ count: aTraiter }, { data: alertes }, { count: recus }] = await Promise.all([
@@ -113,6 +142,7 @@ export async function executerTaches({ recap = false } = {}) {
     relances: await relances48h(db),
     suivis: await suivisCommission(db),
     sites_silencieux: await sitesSilencieux(db),
+    a_facturer: await facturablesAchatLead(db),
     recap: false,
   };
   if (recap) {
