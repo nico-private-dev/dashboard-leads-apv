@@ -186,6 +186,7 @@ export type Database = {
           created_at: string
           departement: string | null
           doublon_de: string | null
+          doublon_verifie: boolean
           email: string | null
           envoye_le: string | null
           geoloc_incertaine: boolean
@@ -225,6 +226,7 @@ export type Database = {
           created_at?: string
           departement?: string | null
           doublon_de?: string | null
+          doublon_verifie?: boolean
           email?: string | null
           envoye_le?: string | null
           geoloc_incertaine?: boolean
@@ -264,6 +266,7 @@ export type Database = {
           created_at?: string
           departement?: string | null
           doublon_de?: string | null
+          doublon_verifie?: boolean
           email?: string | null
           envoye_le?: string | null
           geoloc_incertaine?: boolean

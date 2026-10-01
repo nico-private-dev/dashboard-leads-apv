@@ -4,7 +4,7 @@ import type { Json, Tables } from "@/lib/supabase/types";
 import { extraireGenerique, extraireTally, normaliser, type Mapping, type Socle } from "./extraction";
 
 type Admin = ReturnType<typeof createAdminClient>;
-type Geo = { ville?: string; code_postal?: string; departement?: string; region?: string; lat?: number; lng?: number; incertaine: boolean };
+export type Geo = { ville?: string; code_postal?: string; departement?: string; region?: string; lat?: number; lng?: number; incertaine: boolean };
 
 const JOURS_DOUBLON = 30;
 
@@ -13,7 +13,7 @@ async function evenement(db: Admin, lead_id: string, type: string, details: Reco
 }
 
 // Brief §4 étape 4 : api-adresse.data.gouv.fr (France uniquement en V1).
-async function geolocaliser(ville?: string, codePostal?: string): Promise<Geo | null> {
+export async function geolocaliser(ville?: string, codePostal?: string): Promise<Geo | null> {
   const q = ville || codePostal;
   if (!q || q.length < 3) return null;
   const chercher = async (params: Record<string, string>) => {
