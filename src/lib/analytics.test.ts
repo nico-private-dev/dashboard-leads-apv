@@ -54,3 +54,12 @@ test("filtre non applicable à Leadrs → pas de chiffres Leadrs", () => {
   assert.equal(v.leadrs, null);
   assert.equal(v.variation, null);
 });
+
+test("les leads archivés ne comptent pas dans les leads reçus", () => {
+  const v = calculerVueEnsemble({
+    leads: [lead("2026-09-30T08:00:00Z", "archive"), lead("2026-09-30T09:00:00Z")],
+    precedents: null, stats: [], ref, bornes: bornesPeriode("7j", new Date("2026-10-01T10:00:00Z")), leadrsApplicable: true,
+  });
+  assert.equal(v.recus, 1);
+  assert.equal(v.doublons, 0);
+});

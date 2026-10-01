@@ -10,7 +10,7 @@ import { depuis, formatEuros, formatNombre } from "@/lib/format";
 import { bornesPeriode, PERIODES } from "@/lib/periodes";
 import { chargerReferentiel } from "@/lib/referentiel";
 import { createClient } from "@/lib/supabase/server";
-import { resoudreAlerte } from "./actions";
+import { lancerVerifications, resoudreAlerte } from "./actions";
 
 export const metadata: Metadata = { title: "Vue d'ensemble" };
 
@@ -95,7 +95,7 @@ export default async function PageVueEnsemble({ searchParams }: PageProps<"/">) 
     chargerLeads(supabase, filtres),
     bornes.precedente
       ? appliquerFiltres(supabase.from("leads").select("id", { count: "exact", head: true }), filtres, { bornes: { ...bornes, ...bornes.precedente }, sansStatut: true })
-          .neq("statut", "doublon")
+          .not("statut", "in", "(doublon,archive)")
           .then((r) => r.count ?? 0)
       : Promise.resolve(null),
     requeteStats,
@@ -186,6 +186,11 @@ export default async function PageVueEnsemble({ searchParams }: PageProps<"/">) 
       </div>
 
       <Carte titre={`Alertes actives${alertes?.length ? ` (${alertes.length})` : ""}`}>
+        <form action={lancerVerifications} className="-mt-9 mb-3 flex justify-end">
+          <Button size="sm" variant="outline" type="submit">
+            Lancer les vérifications
+          </Button>
+        </form>
         {!alertes?.length ? (
           <p className="text-sm text-muted-foreground">Aucune alerte.</p>
         ) : (

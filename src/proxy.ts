@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isAdminEmail } from "@/lib/admin";
 
 // Accès sans session : webhooks (token + signature Tally), tâches planifiées (CRON_SECRET), liens partenaires 1 clic (lien signé).
-const PUBLIC_PATHS = ["/connexion", "/auth/", "/api/ingest/", "/api/taches/", "/p/"];
+const PUBLIC_PATHS = ["/connexion", "/auth/", "/api/ingest/", "/api/taches", "/p/"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

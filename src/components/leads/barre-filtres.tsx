@@ -99,7 +99,7 @@ export function BarreFiltres({
       {avecStatut && (
         <select name="statut" defaultValue={filtres.statut ?? ""} onChange={envoyer} className={classeSelect} aria-label="Statut">
           <option value="">Tous statuts</option>
-          <option value="sans_doublons">Tous sauf doublons</option>
+          <option value="sans_doublons">Sauf doublons et archivés</option>
           {Object.entries(STATUTS).map(([v, s]) => (
             <option key={v} value={v}>
               {s.label}

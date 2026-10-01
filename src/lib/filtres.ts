@@ -37,6 +37,7 @@ export function versUrl(f: Filtres, extra: Record<string, string> = {}): string 
 interface Filtrable<Q> {
   eq(colonne: string, valeur: string): Q;
   neq(colonne: string, valeur: string): Q;
+  not(colonne: string, operateur: string, valeur: string): Q;
   is(colonne: string, valeur: null): Q;
   gte(colonne: string, valeur: string): Q;
   lt(colonne: string, valeur: string): Q;
@@ -58,8 +59,8 @@ export function appliquerFiltres<Q extends Filtrable<Q>>(
   else if (f.source) q = q.eq("source_id", f.source);
   if (f.partenaire) q = q.eq("partenaire_id", f.partenaire);
   if (f.departement) q = q.eq("departement", f.departement);
-  // « sans_doublons » : ce que compte la vue d'ensemble comme « leads reçus ».
-  if (f.statut === "sans_doublons" && !options.sansStatut) q = q.neq("statut", "doublon");
+  // « sans_doublons » : ce que compte la vue d'ensemble comme « leads reçus » (ni doublons, ni archivés).
+  if (f.statut === "sans_doublons" && !options.sansStatut) q = q.not("statut", "in", "(doublon,archive)");
   else if (f.statut && !options.sansStatut) q = q.eq("statut", f.statut);
   if (f.q) {
     // Caractères réservés de la syntaxe or() retirés.

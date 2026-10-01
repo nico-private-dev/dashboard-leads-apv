@@ -56,7 +56,8 @@ export function calculerVueEnsemble({
   bornes: Bornes;
   leadrsApplicable: boolean; // faux si un filtre ne s'applique pas aux chiffres agrégés (source, partenaire, département)
 }) {
-  const recus = leads.filter((l) => l.statut !== "doublon");
+  // « Reçus » : ni doublons, ni archivés (leads de test, mis de côté).
+  const recus = leads.filter((l) => l.statut !== "doublon" && l.statut !== "archive");
   const caDirect = recus.reduce((t, l) => t + Number(l.prix_facture ?? 0) + Number(l.montant_commission ?? 0), 0);
   const attribues = recus.filter((l) => l.partenaire_id).length;
 
@@ -125,7 +126,7 @@ export function calculerVueEnsemble({
     recus: recus.length,
     variation: precedents === null || precedents === 0 ? null : (recus.length - precedents) / precedents,
     precedents,
-    doublons: leads.length - recus.length,
+    doublons: leads.filter((l) => l.statut === "doublon").length,
     attribues,
     horsZone: recus.filter((l) => l.statut === "hors_zone").length,
     aCompleter: recus.filter((l) => l.statut === "a_completer").length,
