@@ -38,7 +38,7 @@ export function FormulaireDialog({
       }}
     >
       <DialogTrigger render={declencheur} />
-      <DialogContent>
+      <DialogContent className="max-h-[90svh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{titre}</DialogTitle>
         </DialogHeader>
