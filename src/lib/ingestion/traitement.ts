@@ -99,7 +99,8 @@ export async function traiterLead(leadId: string) {
       .from("leads")
       .update({
         ...socle,
-        ville: (geo && !geo.incertaine && geo.ville) || socle.ville || null,
+        // Orthographe officielle de la ville saisie ; un code postal seul peut couvrir plusieurs communes → pas de ville inventée.
+        ville: (socle.ville && geo && !geo.incertaine && geo.ville) || socle.ville || null,
         code_postal: geo?.code_postal ?? socle.code_postal ?? null,
         departement: geo?.departement ?? null,
         region: geo?.region ?? null,

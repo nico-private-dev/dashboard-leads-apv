@@ -104,7 +104,13 @@ export function normaliser(socle: Socle, pays = "FR"): Socle {
   if (n.telephone) n.telephone = normaliserTelephone(n.telephone, pays);
   if (n.prenom) n.prenom = casseNom(n.prenom);
   if (n.nom) n.nom = casseNom(n.nom);
-  if (n.ville) n.ville = n.ville.trim();
   if (n.code_postal) n.code_postal = n.code_postal.replace(/\s+/g, "");
+  if (n.ville) {
+    // « 14940 », « Caen 14000 », « Caen (14000) » : on sépare la ville du code postal.
+    const m = n.ville.trim().match(/^(.*?)[\s,(-]*(\d{5})\)?$/);
+    n.ville = (m ? m[1] : n.ville).trim() || undefined;
+    if (m && !n.code_postal) n.code_postal = m[2];
+    if (!n.ville) delete n.ville;
+  }
   return n;
 }

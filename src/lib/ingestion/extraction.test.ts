@@ -71,4 +71,8 @@ test("générique + normalisation", () => {
   assert.deepEqual(fr, { telephone: "+33612345678", email: "a@b.fr", code_postal: "69003" });
   assert.equal(casseNom("jean-pierre DE LA fontaine"), "Jean-Pierre De La Fontaine");
   assert.equal(casseNom("o'neil"), "O'Neil");
+  assert.deepEqual(normaliser({ ville: "14940" }), { code_postal: "14940" });
+  assert.deepEqual(normaliser({ ville: "Caen (14000)" }), { ville: "Caen", code_postal: "14000" });
+  assert.deepEqual(normaliser({ ville: "Caen 14000", code_postal: "14123" }), { ville: "Caen", code_postal: "14123" });
+  assert.deepEqual(normaliser({ ville: "Saint-Lô" }), { ville: "Saint-Lô" });
 });
