@@ -1,7 +1,7 @@
 // Lancer : pnpm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bornesPeriode, dateParis, heureParisVersDate, prorata } from "./periodes.ts";
+import { bornesMois, bornesPeriode, dateParis, heureParisVersDate, lundi, prorata } from "./periodes.ts";
 
 test("jour à Paris, même quand il est encore la veille en UTC", () => {
   assert.equal(dateParis(new Date("2026-09-30T22:30:00Z")), "2026-10-01"); // 00:30 à Paris
@@ -28,4 +28,12 @@ test("prorata Leadrs", () => {
   assert.equal(prorata("2026-09-01", "2026-09-30", "2026-09-25", "2026-10-01"), 6 / 30);
   assert.equal(prorata("2026-09-21", "2026-09-27", null, "2026-10-01"), 1);
   assert.equal(prorata("2026-08-01", "2026-08-31", "2026-09-25", "2026-10-01"), 0);
+});
+
+test("semaines et mois", () => {
+  assert.equal(lundi("2026-10-01"), "2026-09-28"); // jeudi
+  assert.equal(lundi("2026-09-28"), "2026-09-28");
+  assert.equal(lundi("2026-10-04"), "2026-09-28"); // dimanche
+  assert.deepEqual(bornesMois("2026-02"), { debut: "2026-02-01", fin: "2026-02-28" });
+  assert.deepEqual(bornesMois("2026-12"), { debut: "2026-12-01", fin: "2026-12-31" });
 });

@@ -83,3 +83,16 @@ export function prorata(periodeDebut: string, periodeFin: string, fenetreDebut: 
 export function heureParisLocale(d: Date): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: FUSEAU, dateStyle: "short", timeStyle: "short" }).format(d).replace(" ", "T");
 }
+
+// Lundi de la semaine d'un jour donné.
+export function lundi(jour: string): string {
+  const jds = new Date(jour + "T12:00:00Z").getUTCDay(); // 0 = dimanche
+  return ajouterJours(jour, -((jds + 6) % 7));
+}
+
+// « 2026-09 » → premier et dernier jour du mois.
+export function bornesMois(mois: string): { debut: string; fin: string } {
+  const [a, m] = mois.split("-").map(Number);
+  const dernier = new Date(Date.UTC(a, m, 0)).getUTCDate();
+  return { debut: `${mois}-01`, fin: `${mois}-${String(dernier).padStart(2, "0")}` };
+}

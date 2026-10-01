@@ -19,3 +19,25 @@ export function depuis(d: string | Date, maintenant = new Date()) {
   if (Math.abs(heures) < 24) return relatif.format(heures, "hour");
   return relatif.format(Math.round(heures / 24), "day");
 }
+
+const jourCourt = new Intl.DateTimeFormat("fr-FR", { timeZone: "UTC", day: "2-digit", month: "2-digit", year: "numeric" });
+
+// « 2026-09-21 » (date sans heure) → « 21/09/2026 »
+export function formatJour(jour: string) {
+  return jourCourt.format(new Date(jour + "T12:00:00Z"));
+}
+
+export function formatPeriode(debut: string, fin: string) {
+  return `du ${formatJour(debut)} au ${formatJour(fin)}`;
+}
+
+const euros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+const eurosCentimes = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
+
+export function formatEuros(n: number, centimes = false) {
+  return (centimes ? eurosCentimes : euros).format(n);
+}
+
+export function formatNombre(n: number, decimales = 0) {
+  return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: decimales }).format(n);
+}
