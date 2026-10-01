@@ -36,6 +36,7 @@ export function versUrl(f: Filtres, extra: Record<string, string> = {}): string 
 // Interface minimale des requêtes Supabase qu'on filtre (évite de dépendre des types internes).
 interface Filtrable<Q> {
   eq(colonne: string, valeur: string): Q;
+  neq(colonne: string, valeur: string): Q;
   is(colonne: string, valeur: null): Q;
   gte(colonne: string, valeur: string): Q;
   lt(colonne: string, valeur: string): Q;
@@ -57,7 +58,9 @@ export function appliquerFiltres<Q extends Filtrable<Q>>(
   else if (f.source) q = q.eq("source_id", f.source);
   if (f.partenaire) q = q.eq("partenaire_id", f.partenaire);
   if (f.departement) q = q.eq("departement", f.departement);
-  if (f.statut && !options.sansStatut) q = q.eq("statut", f.statut);
+  // « sans_doublons » : ce que compte la vue d'ensemble comme « leads reçus ».
+  if (f.statut === "sans_doublons" && !options.sansStatut) q = q.neq("statut", "doublon");
+  else if (f.statut && !options.sansStatut) q = q.eq("statut", f.statut);
   if (f.q) {
     // Caractères réservés de la syntaxe or() retirés.
     const t = f.q.replace(/[,()*"\\]/g, " ").trim();

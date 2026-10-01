@@ -8,7 +8,7 @@ export function PanneauLead({ urlFermeture, titre, children }: { urlFermeture: s
   const router = useRouter();
   return (
     <Sheet open onOpenChange={(o) => !o && router.push(urlFermeture, { scroll: false })}>
-      <SheetContent className="w-full overflow-y-auto data-[side=right]:sm:max-w-xl">
+      <SheetContent className="overflow-y-auto data-[side=right]:w-full data-[side=right]:sm:max-w-xl">
         <SheetTitle className="sr-only">{titre}</SheetTitle>
         {children}
       </SheetContent>
